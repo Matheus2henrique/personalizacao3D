@@ -1,0 +1,59 @@
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  font-family:Arial, Helvetica, sans-serif;
+  background:#f4f6f9;
+}
+
+.layout{
+  display:flex;
+  height:100vh;
+}
+
+.viewer {
+  flex: 1;
+  background: linear-gradient(
+    135deg,
+    #f5f7fa,
+    #e7edf5
+  );
+  position: relative;
+}
+
+/* Faz o canvas ocupar tudo corretamente */
+.viewer canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+.panel{
+  width:300px;
+  background:white;
+  padding:25px;
+  border-left:1px solid #ddd;
+}
+
+.panel h2{
+  margin-bottom:20px;
+}
+
+.panel button{
+  width:100%;
+  padding:14px;
+  margin-bottom:10px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  font-size:15px;
+}
+
+.active{
+  background:#0050b4;
+  color:white;
+}
+
