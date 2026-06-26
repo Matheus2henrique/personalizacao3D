@@ -1,52 +1,119 @@
-// function Shirt({ type }) {
-//   const colors = {
-//     polo: "#0050b4",
-//     regata: "#28a745",
-//     camiseta: "#ff6b00",
-//     social: "#f2f2f2"
-//   };
+import { useRef } from "react";
+import { useFrame } from "@react-three/fiber";
+import GlbClothing from "./GlbClothing";
+import { modelConfig } from "../clothingData";
 
-//   return (
-//     <group>
+function makeMat(color) {
+  return <meshStandardMaterial color={color} roughness={0.6} renderOrder={1} />;
+}
 
-//       {/* cabeça */}
+function Torso({ color }) {
+  return (
+    <mesh position={[0, 0.15, 0]}>
+      <cylinderGeometry args={[0.55, 0.45, 1.5, 24]} />
+      {makeMat(color)}
+    </mesh>
+  );
+}
 
-//       <mesh position={[0, 1.4, 0]}>
-//         <sphereGeometry args={[0.5, 32, 32]} />
-//         <meshStandardMaterial color="#f5cfa0" />
-//       </mesh>
+function CollarSocial({ color }) {
+  return (
+    <group position={[0, 0.88, 0]}>
+      <mesh position={[0.08, -0.02, -0.08]} rotation={[0.2, 0, -0.2]}>
+        <boxGeometry args={[0.12, 0.08, 0.04]} />
+        {makeMat(color)}
+      </mesh>
+      <mesh position={[-0.08, -0.02, -0.08]} rotation={[0.2, 0, 0.2]}>
+        <boxGeometry args={[0.12, 0.08, 0.04]} />
+        {makeMat(color)}
+      </mesh>
+    </group>
+  );
+}
 
-//       {/* tronco */}
+function Sleeve({ side, length, color }) {
+  const x = side === "left" ? -0.55 : 0.55;
+  const rotZ = side === "left" ? 0.3 : -0.3;
+  return (
+    <mesh position={[x, 0.55, 0]} rotation={[0, 0, rotZ]}>
+      <cylinderGeometry args={[0.13, 0.1, length, 12]} />
+      {makeMat(color)}
+    </mesh>
+  );
+}
 
-//       <mesh position={[0, 0, 0]}>
-//         <boxGeometry args={[1.8, 2.5, 0.8]} />
-//         <meshStandardMaterial
-//           color={colors[type]}
-//         />
-//       </mesh>
+function renderProcedural(type, color) {
+  switch (type) {
+    case "regata":
+      return (
+        <group>
+          <mesh position={[0, 0.15, 0]}>
+            <cylinderGeometry args={[0.4, 0.45, 1.3, 24]} />
+            {makeMat(color)}
+          </mesh>
+          <mesh position={[-0.3, 0.6, 0]}>
+            <boxGeometry args={[0.08, 0.3, 0.08]} />
+            {makeMat(color)}
+          </mesh>
+          <mesh position={[0.3, 0.6, 0]}>
+            <boxGeometry args={[0.08, 0.3, 0.08]} />
+            {makeMat(color)}
+          </mesh>
+        </group>
+      );
 
-//       {/* braços */}
+    case "social":
+      return (
+        <group>
+          <Torso color={color} />
+          <Sleeve side="left" length={0.55} color={color} />
+          <Sleeve side="right" length={0.55} color={color} />
+          <CollarSocial color={color} />
+        </group>
+      );
 
-//       <mesh position={[-1.2, 0, 0]}>
-//         <cylinderGeometry
-//           args={[0.2, 0.2, 1.8]}
-//         />
-//         <meshStandardMaterial
-//           color={colors[type]}
-//         />
-//       </mesh>
+    default:
+      return <Torso color={color} />;
+  }
+}
 
-//       <mesh position={[1.2, 0, 0]}>
-//         <cylinderGeometry
-//           args={[0.2, 0.2, 1.8]}
-//         />
-//         <meshStandardMaterial
-//           color={colors[type]}
-//         />
-//       </mesh>
+export default function Shirt({ type, color }) {
+  const groupRef = useRef(null);
+  const opacityRef = useRef(0);
 
-//     </group>
-//   );
-// }
+  const cfg = modelConfig[type];
 
-// export default Shirt;
+  useFrame(() => {
+    if (!groupRef.current) return;
+    if (cfg) return;
+
+    if (opacityRef.current < 1) {
+      opacityRef.current = Math.min(opacityRef.current + 0.04, 1);
+      groupRef.current.traverse((child) => {
+        if (child.isMesh && child.material) {
+          child.material.transparent = true;
+          child.material.opacity = opacityRef.current;
+          child.material.depthWrite = opacityRef.current > 0.99;
+        }
+      });
+    }
+  });
+
+  if (cfg) {
+    return (
+      <GlbClothing
+        modelPath={cfg.path}
+        color={color}
+        scale={cfg.scale}
+        position={cfg.position}
+        rotation={cfg.rotation}
+      />
+    );
+  }
+
+  return (
+    <group ref={groupRef} position={[0, -2, 0]}>
+      {renderProcedural(type, color)}
+    </group>
+  );
+}
